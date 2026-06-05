@@ -1,5 +1,5 @@
 // src/components/Navigation.jsx
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import useAuth from '../redux/hooks/useAuth'
@@ -67,6 +67,19 @@ const SunIcon = () => (
     <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
   </svg>
 )
+const HamburgerIcon = () => (
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <line x1="3" y1="6" x2="21" y2="6"/>
+    <line x1="3" y1="12" x2="21" y2="12"/>
+    <line x1="3" y1="18" x2="21" y2="18"/>
+  </svg>
+)
+const CloseIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <line x1="18" y1="6" x2="6" y2="18"/>
+    <line x1="6" y1="6" x2="18" y2="18"/>
+  </svg>
+)
 
 const NAV_ITEMS = [
   { path: '/',          label: 'Home',           Icon: HomeIcon,  public: true  },
@@ -80,12 +93,261 @@ const NAV_ITEMS = [
 export default function Navigation({ onAuthOpen }) {
   const { user, isLoggedIn, isGuest, logout } = useAuth()
   const location = useLocation()
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false)
 
+  // Close sidebar when route changes
+  useEffect(() => {
+    setIsSidebarOpen(false)
+  }, [location.pathname])
+
+  // Close sidebar on window resize to desktop
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 1024) {
+        setIsSidebarOpen(false)
+      }
+    }
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
+
+  const toggleSidebar = () => setIsSidebarOpen(prev => !prev)
+
+  // ── Desktop Sidebar ───────────────────────────────────────────
   return (
     <>
-      {/* ── Desktop Sidebar ─────────────────────────────────────────── */}
+      {/* Mobile Hamburger Menu Button (visible only on smaller screens) */}
+      <button
+        className="hamburger-btn"
+        onClick={toggleSidebar}
+        style={{
+          display: 'none',
+          position: 'fixed',
+          top: 12,
+          left: 12,
+          zIndex: 50,
+          background: 'white',
+          border: 'none',
+          borderRadius: 8,
+          padding: 8,
+          boxShadow: 'var(--shadow-card)',
+          cursor: 'pointer',
+        }}
+      >
+        <HamburgerIcon />
+      </button>
+
+      {/* Mobile Sidebar Overlay with Close Button */}
+      <AnimatePresence>
+        {isSidebarOpen && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 0.5 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsSidebarOpen(false)}
+              style={{
+                position: 'fixed',
+                inset: 0,
+                background: 'black',
+                zIndex: 50,
+              }}
+            />
+            {/* Slide-in Menu */}
+            <motion.aside
+              initial={{ x: '-100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '-100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+              style={{
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                height: '100dvh',
+                width: 'min(80%, 320px)',
+                background: 'white',
+                zIndex: 60,
+                display: 'flex',
+                flexDirection: 'column',
+                padding: '24px 14px',
+                overflowY: 'auto',
+                boxShadow: '4px 0 20px rgba(0,0,0,0.1)',
+              }}
+            >
+              {/* Mobile Close Button */}
+              <button
+                onClick={() => setIsSidebarOpen(false)}
+                style={{
+                  position: 'absolute',
+                  top: 12,
+                  right: 12,
+                  background: 'rgba(0,0,0,0.05)',
+                  border: 'none',
+                  borderRadius: '50%',
+                  width: 32,
+                  height: 32,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                }}
+              >
+                <CloseIcon />
+              </button>
+
+              {/* Logo */}
+              <NavLink
+                to="/"
+                style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 10, marginBottom: 32, padding: '0 4px', marginTop: 8 }}
+              >
+                <div
+                  style={{
+                    width: 34,
+                    height: 34,
+                    borderRadius: '50%',
+                    background: 'var(--color-forest)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: 16,
+                  }}
+                >
+                  🌍
+                </div>
+                <div>
+                  <p style={{ fontFamily: 'var(--font-display)', fontSize: 15, fontWeight: 600,
+                    color: 'var(--color-ink)', margin: 0, lineHeight: 1.2 }}>
+                    Taste the World
+                  </p>
+                  <p style={{ fontFamily: 'var(--font-body)', fontSize: 10, color: 'var(--color-ink-faint)',
+                    margin: 0, letterSpacing: '0.02em' }}>
+                    One recipe. One culture.
+                  </p>
+                </div>
+              </NavLink>
+
+              {/* Nav items */}
+              <nav style={{ display: 'flex', flexDirection: 'column', gap: 2, flex: 1 }}>
+                {NAV_ITEMS.map(({ path, label, Icon, public: isPublic }) => {
+                  const isLocked = !isPublic && !isLoggedIn && !isGuest
+                  const isActive = location.pathname === path
+
+                  if (isLocked) {
+                    return (
+                      <button
+                        key={path}
+                        className="nav-item"
+                        onClick={onAuthOpen}
+                        style={{ opacity: 0.55, position: 'relative' }}
+                      >
+                        <Icon />
+                        <span>{label}</span>
+                        <span style={{ marginLeft: 'auto', fontSize: 10 }}>🔒</span>
+                      </button>
+                    )
+                  }
+
+                  return (
+                    <NavLink
+                      key={path}
+                      to={path}
+                      className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
+                      style={{ textDecoration: 'none' }}
+                      onClick={() => setIsSidebarOpen(false)}
+                    >
+                      <Icon />
+                      <span>{label}</span>
+                      {isActive && (
+                        <motion.div
+                          layoutId="nav-indicator"
+                          style={{
+                            marginLeft: 'auto', width: 5, height: 5,
+                            borderRadius: '50%', background: 'rgba(255,255,255,0.7)',
+                          }}
+                        />
+                      )}
+                    </NavLink>
+                  )
+                })}
+              </nav>
+
+              {/* Bottom section */}
+              <div style={{ marginTop: 'auto', paddingTop: 16, borderTop: '1px solid var(--color-cream-dark)' }}>
+                {isLoggedIn ? (
+                  <>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 4px', marginBottom: 8 }}>
+                      <div style={{
+                        width: 30, height: 30, borderRadius: '50%',
+                        background: 'var(--color-forest)', display: 'flex',
+                        alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 12, fontWeight: 600,
+                      }}>
+                        {user?.username?.[0]?.toUpperCase() || '?'}
+                      </div>
+                      <div style={{ minWidth: 0 }}>
+                        <p style={{ fontFamily: 'var(--font-body)', fontSize: 13, fontWeight: 600,
+                          color: 'var(--color-ink)', margin: 0,
+                          overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {user?.username}
+                        </p>
+                        <p style={{ fontFamily: 'var(--font-body)', fontSize: 10,
+                          color: 'var(--color-ink-faint)', margin: 0,
+                          overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {user?.email}
+                        </p>
+                      </div>
+                    </div>
+                    <button className="nav-item" onClick={logout}
+                      style={{ color: 'var(--color-accent)', width: '100%' }}>
+                      <LogoutIcon />
+                      <span>Log out</span>
+                    </button>
+                  </>
+                ) : isGuest ? (
+                  <div style={{
+                    background: 'rgba(61,90,62,0.07)',
+                    border: '1px solid rgba(61,90,62,0.18)',
+                    borderRadius: 10, padding: '10px 12px',
+                  }}>
+                    <p style={{ fontFamily: 'var(--font-body)', fontSize: 11,
+                      color: 'var(--color-ink-muted)', margin: '0 0 8px', lineHeight: 1.4 }}>
+                      👋 Browsing as <strong>Guest</strong><br/>Sign in to save recipes &amp; favourites
+                    </p>
+                    <button className="btn-primary" onClick={onAuthOpen}
+                      style={{ width: '100%', fontSize: 12, padding: '8px 12px' }}>
+                      <UserIcon />
+                      Sign In / Register
+                    </button>
+                  </div>
+                ) : (
+                  <button className="btn-primary" onClick={onAuthOpen}
+                    style={{ width: '100%', fontSize: 13 }}>
+                    <UserIcon />
+                    Sign in
+                  </button>
+                )}
+
+                {/* Tagline */}
+                <p style={{
+                  fontFamily: 'var(--font-display)',
+                  fontStyle: 'italic',
+                  fontSize: 11,
+                  color: 'var(--color-ink-faint)',
+                  textAlign: 'center',
+                  marginTop: 16,
+                  lineHeight: 1.5,
+                }}>
+                  "Food is a passport<br/>to the heart of a culture."
+                </p>
+              </div>
+            </motion.aside>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* ── Desktop Sidebar (Hidden on Mobile) ───────────────────────────── */}
       <aside
-        className="sidebar"
+        className="sidebar-desktop"
         style={{
           background: 'white',
           borderRight: '1px solid rgba(212,197,169,0.4)',
@@ -96,6 +358,8 @@ export default function Navigation({ onAuthOpen }) {
           top: 0,
           height: '100dvh',
           overflowY: 'auto',
+          width: '260px',
+          flexShrink: 0,
         }}
       >
         {/* Logo */}
@@ -296,7 +560,9 @@ export default function Navigation({ onAuthOpen }) {
 
       <style>{`
         @media (max-width: 1024px) {
+          .sidebar-desktop { display: none !important; }
           .mobile-nav { display: block !important; }
+          .hamburger-btn { display: block !important; }
         }
       `}</style>
     </>

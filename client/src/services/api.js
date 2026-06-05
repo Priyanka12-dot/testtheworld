@@ -4,7 +4,7 @@ import store from '../redux/store'
 import { logout } from '../redux/slices/authSlice'
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || '/api',
+  baseURL: 'https://testtheworld-backend.onrender.com',
   timeout: 20000,
   headers: { 'Content-Type': 'application/json' },
 })

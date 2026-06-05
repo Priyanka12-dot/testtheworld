@@ -44,6 +44,7 @@ const allowedOrigins = [
   process.env.CLIENT_URL || "http://localhost:5173",
   "http://localhost:5173",
   "http://localhost:3000",
+  "https://testtheworld.onrender.com",
 ];
 
 app.use(

@@ -5,6 +5,7 @@ import { logout } from '../redux/slices/authSlice'
 
 const api = axios.create({
   baseURL: 'https://testtheworld-backend.onrender.com',
+  withCredentials: true,
   timeout: 20000,
   headers: { 'Content-Type': 'application/json' },
 })
